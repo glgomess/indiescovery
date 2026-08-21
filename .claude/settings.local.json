@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./gradlew compileKotlin *)",
+      "Read(//Library/Java/JavaVirtualMachines/**)",
+      "Read(//Users/GuiPersonal/.sdkman/candidates/java/current/bin/**)",
+      "Bash(/usr/bin/java -version)",
+      "Bash(/usr/libexec/java_home -v 21)",
+      "Bash(JAVA_HOME=$\\(/usr/libexec/java_home -v 21 2>/dev/null\\) ./gradlew compileKotlin)",
+      "Bash(sudo *)",
+      "WebSearch",
+      "WebFetch(domain:dev.doctormckay.com)",
+      "WebFetch(domain:steamcommunity.com)",
+      "WebFetch(domain:www.steamwebapi.com)",
+      "Bash(git *)"
+    ]
+  }
+}
