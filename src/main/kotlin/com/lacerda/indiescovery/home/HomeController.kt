@@ -18,14 +18,8 @@ class HomeController(
     @GetMapping("/")
     fun home(): String {
         val steamId = (SecurityContextHolder.getContext().authentication as SteamAuthentication).steamId
-        log.info(Thread.currentThread().name)
-        log.info(Thread.currentThread().isVirtual.toString())
         val player = steamPlayerPort.getPlayerSummary(steamId)
-        log.info(Thread.currentThread().name)
-        log.info(Thread.currentThread().isVirtual.toString())
         val games = steamLibraryPort.getOwnedGames(steamId)
-        log.info(Thread.currentThread().name)
-        log.info(Thread.currentThread().isVirtual.toString())
 
         log.info("Player info: $player")
         log.info("Owned games (${games.size}): $games")

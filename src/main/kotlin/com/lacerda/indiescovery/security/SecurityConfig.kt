@@ -1,6 +1,5 @@
 package com.lacerda.indiescovery.security
 
-import jakarta.servlet.http.HttpServletResponse
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
@@ -24,13 +23,12 @@ class SecurityConfig {
             .securityContext { it.securityContextRepository(securityContextRepository) }
             .authorizeHttpRequests { auth ->
                 auth
-                    .requestMatchers("/ping", "/auth/steam", "/auth/steam/callback").permitAll()
+                    .requestMatchers("/auth/steam", "/auth/steam/callback").permitAll()
                     .anyRequest().authenticated()
             }
             .exceptionHandling { ex ->
                 ex.authenticationEntryPoint { _, response, _ ->
                     response.sendRedirect("/auth/steam")
-//                    response.sendError(HttpServletResponse.SC_FORBIDDEN)
                 }
             }
             .csrf { it.disable() }

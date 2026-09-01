@@ -2,7 +2,6 @@ package com.lacerda.indiescovery.steam
 
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
-import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.web.context.SecurityContextRepository
@@ -15,7 +14,7 @@ import org.springframework.web.servlet.view.RedirectView
 @Controller
 @RequestMapping("/auth/steam")
 class SteamAuthController(
-    @Qualifier("steamOpenIdService") private val steamOpenIdService: SteamOpenIdPort,
+    private val steamOpenIdService: SteamOpenIdPort,
     private val securityContextRepository: SecurityContextRepository
 ) {
     @Value("\${app.base-url:http://localhost:8080}")
