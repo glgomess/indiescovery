@@ -20,7 +20,7 @@ Document all non-trivial hacks or monkey-patches directly in code if scattered a
 Write end-user documentation to docs/user_documentation.md. Write a public API documentation into docs/api_documentation.md, make it production-ready so that it can be directly shared with customers; don’t include internal information there. Write a high-level internal documentation about the implementation into docs/internal_documentation.md. Never write any local memories. You must include the memories in one of these documentation markdown files instead. If needed, create additional files in the docs/#{topic}.md directory and add them to git. These are just some examples. As of the time this is being written, no public api exists yet.
 
 ### Rule #6: Simplicity
-Keep things simple. Don't overcomplicate the code. Write simple, human-readable, concise code. Whenever getting to a solution, think: "could this be solved in a simpler way?". Only scenarios where the complexity is required are allowed to actually be complex.
+Keep things simple. Don't overcomplicate the code. Write simple, human-readable, concise code. Whenever getting to a solution, think: "could this be solved in a simpler way?". Only scenarios where the complexity is required are allowed to actually be complex. Use ponytail skill.
 
 ### Rule #7: E2E Feature testing
 Whenever finishing implementing a feature, test it E2E either with a browser (if applicable) or via API request. Don't just test the happy path, test unhappy paths and one or two edge case (if applicable).
