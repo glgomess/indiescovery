@@ -14,5 +14,9 @@
       "WebFetch(domain:www.steamwebapi.com)",
       "Bash(git *)"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "idea"
+  ],
+  "enableAllProjectMcpServers": true
 }
