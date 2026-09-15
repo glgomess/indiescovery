@@ -1,6 +1,6 @@
 # Project Overview
 
-This is a project focused on giving users lesser known indie game recommendations. Users authenticate via steam, so we can pull their library and compare their preferences against the indie games. It's still a WIP, but its core technologies are PostgreSQL for user data, and eventually vector database for recommendation. Core language is Kotlin + Spring + Modulith approach.
+This is a project focused on giving users lesser known indie game recommendations. Users authenticate via steam, so we can pull their library and compare their preferences against the indie games. It's still a WIP, but its core technologies are PostgreSQL for user data, and eventually vector database for recommendation. Core stack is PHP 8.5 + Laravel 13 (migrated from Kotlin/Spring on 2026-09-15).
 
 ## Project Rules
 
@@ -31,12 +31,14 @@ We should always prevent random 500's. A good error handling module should catch
 ### Rule #9: The "what if this breaks" rule
 When implementing, always assume the worst. If you're writing a method that fires a message and adds to the DB, think: "what if the system dies during after sending the message, and the data was not commited?". This is a possible scenario for CDC, so always think of worst case scenarios, point them out, and propose solutions if required.
 
-### Rule #10: Modulith Approach
-Modules are top-level packages under com.lacerda.indiescovery; anything in a module's internal subpackage is private implementation and must not be referenced from other modules —    
-enforced by ModuleStructureTests.kt (Spring Modulith).
-
-### Rule #11: Keeping this file updated
+### Rule #10: Keeping this file updated
 Whenever I tell you that you did something wrong, I might explicitly tell you to update this file. If so, you will update the Notes section. 
 
 ## Routing Table
 ## Notes
+- Stack: PHP 8.5 + Laravel 13 + PHPUnit 12. Run the suite with `php artisan test`; it fakes every
+  Steam call and uses in-memory SQLite, so it needs neither Docker nor an API key.
+- Postgres runs via `docker compose up -d` on localhost:5432. Only the running app needs it.
+- Migrated from Kotlin/Spring on 2026-09-15. The Spring Modulith rule was dropped with it: module
+  boundaries are convention now, not enforced by a test. See docs/internal_documentation.md.
+- Never write the Steam API key anywhere but `.env`.

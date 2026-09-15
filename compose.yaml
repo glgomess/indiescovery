@@ -1,15 +1,18 @@
 services:
-  grafana-lgtm:
-    image: 'grafana/otel-lgtm:latest'
-    ports:
-      - '3000:3000'
-      - '4317'
-      - '4318'
   postgres:
-    image: 'postgres:latest'
+    image: postgres:17
     environment:
-      - 'POSTGRES_DB=mydatabase'
-      - 'POSTGRES_PASSWORD=secret'
-      - 'POSTGRES_USER=myuser'
+      POSTGRES_DB: indiescovery
+      POSTGRES_USER: indiescovery
+      POSTGRES_PASSWORD: secret
     ports:
-      - '5432'
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U indiescovery']
+      interval: 5s
+      retries: 10
+
+volumes:
+  pgdata:

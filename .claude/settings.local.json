@@ -12,11 +12,16 @@
       "WebFetch(domain:dev.doctormckay.com)",
       "WebFetch(domain:steamcommunity.com)",
       "WebFetch(domain:www.steamwebapi.com)",
-      "Bash(git *)"
+      "Bash(git *)",
+      "Bash(cd *)",
+      "Bash(composer -V)",
+      "PowerShell(composer *)",
+      "Bash(rm -rf laravel-new)",
+      "Bash(php C:/php/8.5.10/composer.phar create-project laravel/laravel laravel-new --no-interaction)"
     ]
   },
+  "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
     "idea"
-  ],
-  "enableAllProjectMcpServers": true
+  ]
 }
