@@ -62,3 +62,11 @@ transport failure must never be read as a valid signature — and is asserted by
 `src/main/resources/application.properties` in the Kotlin tree. Deleting the file does not remove
 it from history, so the key must be revoked at https://steamcommunity.com/dev/apikey and replaced.
 The new key lives only in `.env`.
+
+## Configuration
+
+Steam endpoints are read from `config/services.php` (`services.steam.api_url`, `login_url`, `media_url`),
+overridable via `STEAM_API_URL`, `STEAM_LOGIN_URL`, `STEAM_MEDIA_URL`. Container-built services
+(`SteamClient`, `SteamOpenId`) receive them via `#[Config]` constructor injection; the static
+`SteamGame::fromApi` factory calls `config()` inline since the container never builds it. Protocol constants (OpenID 2.0
+namespace URIs, the `claimed_id` pattern) stay in code: they are part of the spec, not deployment settings.
