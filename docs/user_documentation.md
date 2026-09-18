@@ -51,9 +51,22 @@ STEAM_API_KEY=your-key-here
 php artisan serve
 ```
 
-Open http://localhost:8000. You will be redirected to Steam to sign in. After signing in you land
-back on a plain text page reporting your Steam persona name and how many games you own — this is a
-temporary smoke endpoint that proves the Steam integration works, not the real product.
+This starts the API on http://localhost:8000. The website itself is the separate `indiescovery-ui`
+app: run `npm run dev` there and open http://localhost:5173. If the UI runs elsewhere, set
+`FRONTEND_URL` in `.env`.
+
+## Logging in
+
+Click **connect steam** and sign in on Steam's own page; Indiescovery never sees your password. You
+land on your profile.
+
+What we read from Steam: your public profile (name, avatar, profile link, account creation date)
+and your owned games with playtime. The library is saved at your first login and refreshed at most
+once every 7 days, when you log in again. If Steam is down, you still log in and see your last
+saved library.
+
+**Seeing no games?** Your Steam game details are private. In Steam, go to Profile → Edit Profile →
+Privacy Settings, set **Game details** to **Public**, then log out and in again.
 
 ## Tests
 
@@ -66,11 +79,9 @@ in-memory SQLite database, so neither Docker nor an API key is needed to run the
 
 ## Troubleshooting
 
-**Redirected back to the Steam login in a loop.** Your `APP_URL` must match the address you browse
-to. Steam validates the OpenID realm against it, so browsing to `127.0.0.1` while `APP_URL` says
-`localhost` will fail.
+**Landing on `/?login=failed`.** The Steam sign-in was cancelled or could not be verified. Try
+again; if it keeps failing, check that Steam is reachable.
 
-**"0 games" for an account that owns games.** Your Steam profile's game details are set to private.
-Steam returns an empty response for private profiles rather than an error.
+**"0 games" for an account that owns games.** Your Steam game details are private; see "Logging in".
 
 **`could not find driver`.** The `pdo_pgsql` extension is not enabled — see Requirements above.
