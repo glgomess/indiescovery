@@ -14,6 +14,6 @@ class HomeController
         $player = $steam->getPlayerSummary($steamId);
         $games = $steam->getOwnedGames($steamId);
 
-        return sprintf('%s owns %d games', $player?->personaName ?? 'Unknown player', count($games));
+        return sprintf('%s owns %d games', $player?->personaName ?? 'Unknown player', is_array($games) ? count($games) : 0);
     }
 }

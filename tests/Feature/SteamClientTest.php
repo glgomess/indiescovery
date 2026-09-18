@@ -46,18 +46,26 @@ class SteamClientTest extends TestCase
         $this->assertNull($games[1]->iconUrl, 'blank img_icon_url must not produce a broken URL');
     }
 
-    /** A private profile returns an empty response object, which must degrade to an empty list rather than an error. */
-    public function test_private_profile_returns_empty_list(): void
+    /** A private profile answers with an empty response object, which must be reported as PRIVATE, not as no games. */
+    public function test_private_profile_returns_private(): void
     {
-        Http::fake(['*/GetOwnedGames/*' => Http::response(['response' => []])]);
+        Http::fake(['*/GetOwnedGames/*' => Http::response(['response' => new \stdClass])]);
 
-        $this->assertSame([], app(SteamClient::class)->getOwnedGames(self::STEAM_ID));
+        $this->assertSame(SteamClient::PRIVATE, app(SteamClient::class)->getOwnedGames(self::STEAM_ID));
     }
 
-    /** An upstream Steam outage must not bubble a raw exception up to the caller (CLAUDE.md Rule #8). */
-    public function test_steam_outage_returns_empty_list(): void
+    /** An upstream Steam outage must return null (failed) rather than an empty list or an exception (CLAUDE.md Rule #8). */
+    public function test_steam_outage_returns_null(): void
     {
         Http::fake(['*/GetOwnedGames/*' => Http::response('gateway down', 500)]);
+
+        $this->assertNull(app(SteamClient::class)->getOwnedGames(self::STEAM_ID));
+    }
+
+    /** A public library with no games is a real empty list. */
+    public function test_empty_public_library_returns_empty_list(): void
+    {
+        Http::fake(['*/GetOwnedGames/*' => Http::response(['response' => ['game_count' => 0]])]);
 
         $this->assertSame([], app(SteamClient::class)->getOwnedGames(self::STEAM_ID));
     }
