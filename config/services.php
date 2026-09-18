@@ -16,6 +16,9 @@ return [
 
     'steam' => [
         'key' => env('STEAM_API_KEY'),
+        'api_url' => env('STEAM_API_URL', 'https://api.steampowered.com'),
+        'login_url' => env('STEAM_LOGIN_URL', 'https://steamcommunity.com/openid/login'),
+        'media_url' => env('STEAM_MEDIA_URL', 'https://media.steampowered.com'),
     ],
 
     'postmark' => [
