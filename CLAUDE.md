@@ -34,6 +34,52 @@ When implementing, always assume the worst. If you're writing a method that fire
 ### Rule #10: Keeping this file updated
 Whenever I tell you that you did something wrong, I might explicitly tell you to update this file. If so, you will update the Notes section. 
 
+### Rule #11: Avoid using hard coded values in classes
+When creatign a constant variable, think if it should be in the config section. For example, if the variable is a steam URL that likely won't change soon, it's best to be at the config section (an env var). But if it's a constant number, then it's fine to be inside a class.
+
+Don't:
+```
+class SteamOpenId
+{
+    private const LOGIN_URL = 'https://steamcommunity.com/openid/login';
+
+    /** Only a claimed_id anchored at Steam's own identity namespace is acceptable. */
+    private const CLAIMED_ID_PATTERN = '#^https://steamcommunity\.com/openid/id/(\d+)$#';
+...
+}
+```
+
+Do:
+```
+class SteamOpenId
+{
+    /** Receives the Steam OpenID endpoint from config, injected by the container. */
+    public function __construct(
+        #[Config('services.steam.login_url')] private readonly string $loginUrl,
+    ) {}
+
+    public function loginUrl(string $returnTo): string
+    {
+        return $this->loginUrl.'?'.http_build_query([...]);
+    }
+...
+}
+```
+
+### Rule #12: Commit rules
+Follow conventional commits rules when commiting. Always try to group the changes in relevant groups, rather than making one big commit.
+
+Don't:
+SteamClient.php,SteamGame.php,internal_documentation.md,CLAUDE.md,.env.exmaple -> Updating things
+
+Do:
+services.php,.env.example -> feat: make Steam endpoints configurable
+SteamClient.php,SteamOpenId.php,SteamGame.php,SteamOpenIdTest.php -> refactor: inject Steam URLs via #[Config]
+internal_documentation.md -> docs: document Steam endpoint config
+...
+
+Use Conventional Commits types: feat, fix, refactor, docs, test, chore, build.
+
 ## Routing Table
 ## Notes
 - Stack: PHP 8.5 + Laravel 13 + PHPUnit 12. Run the suite with `php artisan test`; it fakes every
