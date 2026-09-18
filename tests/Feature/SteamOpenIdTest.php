@@ -49,9 +49,19 @@ class SteamOpenIdTest extends TestCase
         $this->assertSame('http://specs.openid.net/auth/2.0', $query['openid_ns'] ?? $query['openid.ns']);
         $this->assertSame('checkid_setup', $query['openid_mode'] ?? $query['openid.mode']);
         $this->assertSame(self::CALLBACK, $query['openid_return_to'] ?? $query['openid.return_to']);
-        $this->assertSame(config('app.url'), $query['openid_realm'] ?? $query['openid.realm']);
+        $this->assertSame(url('/'), $query['openid_realm'] ?? $query['openid.realm']);
         $this->assertSame('http://specs.openid.net/auth/2.0/identifier_select', $query['openid_identity'] ?? $query['openid.identity']);
         $this->assertSame('http://specs.openid.net/auth/2.0/identifier_select', $query['openid_claimed_id'] ?? $query['openid.claimed_id']);
+    }
+
+    /** Behind the Vite proxy the realm must follow the request host, or Steam rejects return_to as outside it. */
+    public function test_realm_follows_the_request_host(): void
+    {
+        $location = $this->get('http://localhost:5173/auth/steam')->headers->get('Location');
+
+        parse_str(parse_url($location, PHP_URL_QUERY), $query);
+        $this->assertSame('http://localhost:5173', $query['openid_realm']);
+        $this->assertStringStartsWith('http://localhost:5173', $query['openid_return_to']);
     }
 
     /** A signature Steam confirms with is_valid:true yields the numeric steam id from claimed_id. */
