@@ -36,7 +36,7 @@ class SteamAuthFlowTest extends TestCase
     /** A callback Steam confirms stores the steam id in the session and lands the user on the frontend profile. */
     public function test_successful_callback_stores_steam_id_in_session(): void
     {
-        Http::fake(['*/openid/login' => Http::response("is_valid:true\n")]);
+        Http::fake(['*/openid/login' => Http::response("is_valid:true\n"), '*' => Http::response('', 500)]);
 
         $this->get('/auth/steam/callback?'.http_build_query(
             $this->callbackQuery('https://steamcommunity.com/openid/id/'.self::STEAM_ID)
