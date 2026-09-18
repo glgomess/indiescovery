@@ -19,6 +19,7 @@ return [
         'api_url' => env('STEAM_API_URL', 'https://api.steampowered.com'),
         'login_url' => env('STEAM_LOGIN_URL', 'https://steamcommunity.com/openid/login'),
         'media_url' => env('STEAM_MEDIA_URL', 'https://media.steampowered.com'),
+        'capsule_url' => env('STEAM_CAPSULE_URL', 'https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps'),
     ],
 
     'postmark' => [

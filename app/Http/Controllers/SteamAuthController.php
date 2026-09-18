@@ -2,14 +2,20 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\Library\LibrarySync;
 use App\Services\Steam\SteamOpenId;
+use Illuminate\Container\Attributes\Config;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 /** Handles the two legs of the Steam OpenID login: the redirect out and the callback back. */
 class SteamAuthController
 {
-    public function __construct(private readonly SteamOpenId $openId) {}
+    /** Receives the OpenID helper and the frontend URL that users land on after login. */
+    public function __construct(
+        private readonly SteamOpenId $openId,
+        #[Config('app.frontend_url')] private readonly string $frontendUrl,
+    ) {}
 
     /** Sends the visitor to Steam to sign in. */
     public function login(): RedirectResponse
@@ -17,20 +23,21 @@ class SteamAuthController
         return redirect()->away($this->openId->loginUrl(route('steam.callback')));
     }
 
-    /** Verifies the callback with Steam and, on success, records the steam id in the session. */
-    public function callback(Request $request): RedirectResponse
+    /** Verifies the callback with Steam and, on success, records the steam id and syncs the user's library. */
+    public function callback(Request $request, LibrarySync $sync): RedirectResponse
     {
         $steamId = $this->openId->verify($this->openIdParams($request));
 
         if ($steamId === null) {
-            return redirect()->route('steam.login');
+            return redirect()->away($this->frontendUrl.'/?login=failed');
         }
 
         // Prevents session fixation: the pre-login session id must not survive authentication.
         $request->session()->regenerate();
         $request->session()->put('steam_id', $steamId);
+        $sync->run($steamId);
 
-        return redirect('/');
+        return redirect()->away($this->frontendUrl.'/profile');
     }
 
     /**

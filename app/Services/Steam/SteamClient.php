@@ -26,14 +26,11 @@ class SteamClient
             ->withQueryParameters(['key' => $this->apiKey]);
     }
 
-    /**
-     * Returns the games the user owns, or an empty list if the profile is private or Steam is unavailable.
-     *
-     * ponytail: an outage and a genuinely empty library are indistinguishable here. Harmless while
-     * nothing is persisted, but once libraries are cached this MUST NOT overwrite stored data with
-     * an empty list -- see docs/internal_documentation.md.
-     */
-    public function getOwnedGames(string $steamId): array
+    /** Returned by getOwnedGames when the user's game details are not public. */
+    public const PRIVATE = 'private';
+
+    /** Returns the user's games, PRIVATE when Steam hides them, or null when Steam failed (never confuse these). */
+    public function getOwnedGames(string $steamId): array|string|null
     {
         $response = $this->get('/IPlayerService/GetOwnedGames/v1/', [
             'steamid' => $steamId,
@@ -41,10 +38,15 @@ class SteamClient
             'include_played_free_games' => 'true',
         ]);
 
-        return array_map(
-            SteamGame::fromApi(...),
-            $response['response']['games'] ?? []
-        );
+        if ($response === []) {
+            return null;
+        }
+
+        if (! isset($response['response']['game_count'])) {
+            return self::PRIVATE;
+        }
+
+        return array_map(SteamGame::fromApi(...), $response['response']['games'] ?? []);
     }
 
     /** Returns the user's public profile, or null if it does not exist or Steam is unavailable. */

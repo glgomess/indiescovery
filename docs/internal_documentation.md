@@ -21,13 +21,13 @@ OpenID 2.0 login.
 | `SteamGame` / `SteamPlayer` data classes | same names, `readonly class` + `fromApi()` | |
 | `SteamAuthController` | `App\Http\Controllers\SteamAuthController` | |
 | `SecurityConfig` + `SteamAuthentication` | `App\Http\Middleware\RequireSteamAuth` + a session key | |
-| `HomeController` | `App\Http\Controllers\HomeController` | Still just a smoke endpoint. |
+| `HomeController` | — | Smoke endpoint, removed on 2026-09-18 in favour of `/api/me`. |
 | `SteamLibraryPort` / `SteamOpenIdPort` / `SteamPlayerPort` | — | Dropped. Each had one implementation; `Http::fake()` covers the tests without them. Extract an interface when a second provider actually exists. |
 | `ModuleStructureTests` (Spring Modulith) | — | No equivalent. Module boundaries are now convention, not enforced. |
 
-Deliberately **not** carried over or added: any user model or user table, a custom auth guard, any
-persistence of Steam data, and any recommendation logic. The data model is specified in
-`superpowers/specs/2026-09-12-data-storage-design.md` and has not been implemented.
+Deliberately **not** carried over or added: a custom auth guard and any recommendation logic. The
+data model is specified in `superpowers/specs/2026-09-12-data-storage-design.md`; its `users` and
+`owned_games` part is implemented (see "Login and library sync").
 
 ## The dotted-query-parameter hack
 
@@ -38,14 +38,6 @@ parses the raw `QUERY_STRING` by hand instead of using the request's parsed bag.
 `SteamAuthFlowTest::test_successful_callback_stores_steam_id_in_session`, which fails without it.
 
 ## Known fragilities
-
-**A Steam outage is indistinguishable from an empty library.** `SteamClient::getOwnedGames()`
-returns `[]` both when the profile is private and when Steam returns a 5xx or times out. That is
-harmless today because nothing is persisted. It stops being harmless the moment libraries are
-cached or stored: an outage would then overwrite a user's real library with an empty one. Before
-adding persistence, `getOwnedGames()` must distinguish "Steam said you own nothing" from "Steam did
-not answer" — return a result object or throw on transport failure — and the write path must skip
-the update on failure rather than write an empty set. Marked in the code with a `ponytail:` comment.
 
 **Steam's login is OpenID 2.0, not OIDC.** The spec has been deprecated since 2014 and Steam is one
 of the last large providers still running it. There is no fallback: if Steam retires the endpoint,
@@ -63,10 +55,43 @@ transport failure must never be read as a valid signature — and is asserted by
 it from history, so the key must be revoked at https://steamcommunity.com/dev/apikey and replaced.
 The new key lives only in `.env`.
 
+## Login and library sync
+
+Spec: `superpowers/specs/2026-09-18-ui-auth-sync-design.md`.
+
+**Topology.** The React app runs on Vite (`:5173`) and proxies `/api` and `/auth` to Laravel
+(`:8000`) without rewriting `Host`, so the browser sees one origin: the Laravel session cookie just
+works and there is no CORS. `SteamOpenId` builds `openid.realm` from the request (`url('/')`), not
+`APP_URL`; otherwise `return_to` (on `:5173`) would fall outside the realm and Steam would refuse.
+
+**Flow.** `/auth/steam` redirects to Steam. The callback verifies the signature, regenerates the
+session, stores `steam_id`, runs `LibrarySync::run()` and redirects to `FRONTEND_URL/profile`
+(`FRONTEND_URL/?login=failed` if verification fails). There is no Laravel auth guard: the session
+key is the login, and `RequireSteamAuth` returns `401 {"error":"unauthenticated"}` for `api/*`.
+
+**Sync.** `LibrarySync` upserts the `users` row from `GetPlayerSummaries` and sets `last_login_at`.
+If `library_synced_at` is null or older than `config('library.resync_days')` (7), it fetches
+`GetOwnedGames` and upserts `owned_games` on `(steam_id, app_id)`. `first_seen_at` is insert-only
+(excluded from the upsert's update columns); rows missing from a later sync are never deleted.
+The upsert and the `library_synced_at` stamp share one transaction.
+
+**Failure modes.** `SteamClient::getOwnedGames()` returns games, `SteamClient::PRIVATE`
+(`response: {}`) or `null` (Steam failed).
+- Steam failed: keep the old snapshot, don't stamp the sync, login still succeeds.
+- Empty list for a user who already has rows: treated as a Steam hiccup, same as failure.
+- Private: set `library_private`, stamp the sync, leave rows untouched.
+- Player summary failed on first login: user created with `persona_name = steam_id`.
+- Anything else thrown inside the sync is caught and logged, so the callback never 500s.
+
+**Catalog join.** `/api/me` left-joins `owned_games` to the crawl's `games` table for tags and review
+stats. `games` lives on `feat/catalog-crawl`; until it merges, `MeController` checks
+`Schema::hasTable('games')` (marked `ponytail:`), and `MeApiTest` creates a minimal `games` table.
+
 ## Configuration
 
-Steam endpoints are read from `config/services.php` (`services.steam.api_url`, `login_url`, `media_url`),
-overridable via `STEAM_API_URL`, `STEAM_LOGIN_URL`, `STEAM_MEDIA_URL`. Container-built services
+Steam endpoints are read from `config/services.php` (`services.steam.api_url`, `login_url`, `media_url`,
+`capsule_url`), overridable via `STEAM_API_URL`, `STEAM_LOGIN_URL`, `STEAM_MEDIA_URL`, `STEAM_CAPSULE_URL`.
+`FRONTEND_URL` (`config('app.frontend_url')`) is where the login callback sends the browser. Container-built services
 (`SteamClient`, `SteamOpenId`) receive them via `#[Config]` constructor injection; the static
 `SteamGame::fromApi` factory calls `config()` inline since the container never builds it. Protocol constants (OpenID 2.0
 namespace URIs, the `claimed_id` pattern) stay in code: they are part of the spec, not deployment settings.
