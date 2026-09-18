@@ -2,6 +2,7 @@
 
 namespace App\Services\Steam;
 
+use Illuminate\Container\Attributes\Config;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -9,7 +10,10 @@ use Throwable;
 /** Implements Steam's OpenID 2.0 login: builds the redirect and verifies the signed callback. */
 class SteamOpenId
 {
-    private const LOGIN_URL = 'https://steamcommunity.com/openid/login';
+    /** Receives the Steam OpenID endpoint from config, injected by the container. */
+    public function __construct(
+        #[Config('services.steam.login_url')] private readonly string $loginUrl,
+    ) {}
 
     /** Only a claimed_id anchored at Steam's own identity namespace is acceptable. */
     private const CLAIMED_ID_PATTERN = '#^https://steamcommunity\.com/openid/id/(\d+)$#';
@@ -17,7 +21,7 @@ class SteamOpenId
     /** Builds the URL that sends the browser to Steam to authenticate and come back to $returnTo. */
     public function loginUrl(string $returnTo): string
     {
-        return self::LOGIN_URL.'?'.http_build_query([
+        return $this->loginUrl.'?'.http_build_query([
             'openid.ns' => 'http://specs.openid.net/auth/2.0',
             'openid.mode' => 'checkid_setup',
             'openid.return_to' => $returnTo,
@@ -53,7 +57,7 @@ class SteamOpenId
     {
         try {
             $response = Http::timeout(10)->asForm()->post(
-                self::LOGIN_URL,
+                $this->loginUrl,
                 [...$params, 'openid.mode' => 'check_authentication']
             );
         } catch (Throwable $e) {

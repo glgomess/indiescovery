@@ -2,6 +2,7 @@
 
 namespace App\Services\Steam;
 
+use Illuminate\Container\Attributes\Config;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -10,15 +11,19 @@ use Throwable;
 /** Reads a Steam user's public profile and owned games from the Steam Web API. */
 class SteamClient
 {
-    private const BASE_URL = 'https://api.steampowered.com';
+    /** Receives the Steam Web API base URL and key from config, injected by the container. */
+    public function __construct(
+        #[Config('services.steam.api_url')] private readonly string $apiUrl,
+        #[Config('services.steam.key')] private readonly ?string $apiKey,
+    ) {}
 
     /** A request pre-configured with the API key, a timeout and a short retry, since Steam is flaky. */
     private function request(): PendingRequest
     {
-        return Http::baseUrl(self::BASE_URL)
+        return Http::baseUrl($this->apiUrl)
             ->timeout(10)
             ->retry(2, 200, throw: false)
-            ->withQueryParameters(['key' => config('services.steam.key')]);
+            ->withQueryParameters(['key' => $this->apiKey]);
     }
 
     /**

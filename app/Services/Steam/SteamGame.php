@@ -26,7 +26,7 @@ readonly class SteamGame
             playtimeTwoWeeksMinutes: isset($game['playtime_2weeks']) ? (int) $game['playtime_2weeks'] : null,
             iconUrl: $icon === ''
                 ? null
-                : "https://media.steampowered.com/steamcommunity/public/images/apps/{$appId}/{$icon}.jpg",
+                : config('services.steam.media_url')."/steamcommunity/public/images/apps/{$appId}/{$icon}.jpg",
         );
     }
 }

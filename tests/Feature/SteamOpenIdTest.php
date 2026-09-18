@@ -28,6 +28,16 @@ class SteamOpenIdTest extends TestCase
         ];
     }
 
+    /** The Steam login endpoint comes from config, so it can change without a code change. */
+    public function test_login_url_comes_from_config(): void
+    {
+        config(['services.steam.login_url' => 'https://steam.test/openid/login']);
+
+        $url = app(SteamOpenId::class)->loginUrl(self::CALLBACK);
+
+        $this->assertStringStartsWith('https://steam.test/openid/login?', $url);
+    }
+
     /** The redirect URL must carry the six openid.* parameters Steam requires, properly encoded. */
     public function test_it_builds_the_login_redirect_url(): void
     {
