@@ -2,12 +2,15 @@
 
 namespace Tests\Feature;
 
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 /** Exercises the real routes, middleware and session to prove the Steam login flow works end to end. */
 class SteamAuthFlowTest extends TestCase
 {
+    use RefreshDatabase;
+
     private const STEAM_ID = '76561197960287930';
 
     /** A minimal but structurally valid id_res callback query string. */

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\Library\LibrarySync;
 use App\Services\Steam\SteamOpenId;
 use Illuminate\Container\Attributes\Config;
 use Illuminate\Http\RedirectResponse;
@@ -22,8 +23,8 @@ class SteamAuthController
         return redirect()->away($this->openId->loginUrl(route('steam.callback')));
     }
 
-    /** Verifies the callback with Steam and, on success, records the steam id in the session. */
-    public function callback(Request $request): RedirectResponse
+    /** Verifies the callback with Steam and, on success, records the steam id and syncs the user's library. */
+    public function callback(Request $request, LibrarySync $sync): RedirectResponse
     {
         $steamId = $this->openId->verify($this->openIdParams($request));
 
@@ -34,6 +35,7 @@ class SteamAuthController
         // Prevents session fixation: the pre-login session id must not survive authentication.
         $request->session()->regenerate();
         $request->session()->put('steam_id', $steamId);
+        $sync->run($steamId);
 
         return redirect()->away($this->frontendUrl.'/profile');
     }
