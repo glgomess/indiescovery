@@ -30,7 +30,7 @@ class SteamAuthFlowTest extends TestCase
             ->assertRedirectContains('https://steamcommunity.com/openid/login');
     }
 
-    /** A callback Steam confirms stores the steam id in the session and lands the user on the home page. */
+    /** A callback Steam confirms stores the steam id in the session and lands the user on the frontend profile. */
     public function test_successful_callback_stores_steam_id_in_session(): void
     {
         Http::fake(['*/openid/login' => Http::response("is_valid:true\n")]);
@@ -38,11 +38,11 @@ class SteamAuthFlowTest extends TestCase
         $this->get('/auth/steam/callback?'.http_build_query(
             $this->callbackQuery('https://steamcommunity.com/openid/id/'.self::STEAM_ID)
         ))
-            ->assertRedirect('/')
+            ->assertRedirect(config('app.frontend_url').'/profile')
             ->assertSessionHas('steam_id', self::STEAM_ID);
     }
 
-    /** A rejected callback must leave the session untouched and bounce the user back to the login. */
+    /** A rejected callback must leave the session untouched and send the user to the frontend with a failure flag. */
     public function test_rejected_callback_creates_no_session(): void
     {
         Http::fake(['*/openid/login' => Http::response("is_valid:false\n")]);
@@ -50,7 +50,7 @@ class SteamAuthFlowTest extends TestCase
         $this->get('/auth/steam/callback?'.http_build_query(
             $this->callbackQuery('https://steamcommunity.com/openid/id/'.self::STEAM_ID)
         ))
-            ->assertRedirect('/auth/steam')
+            ->assertRedirect(config('app.frontend_url').'/?login=failed')
             ->assertSessionMissing('steam_id');
     }
 
@@ -60,7 +60,7 @@ class SteamAuthFlowTest extends TestCase
         Http::fake(['*/openid/login' => Http::response("is_valid:false\n")]);
 
         $this->get('/auth/steam/callback')
-            ->assertRedirect('/auth/steam')
+            ->assertRedirect(config('app.frontend_url').'/?login=failed')
             ->assertSessionMissing('steam_id');
     }
 
