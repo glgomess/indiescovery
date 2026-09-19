@@ -1,7 +1,9 @@
 # Data Storage & Recommendation Design
 
 **Date:** 2026-09-12
-**Status:** Approved, not yet implemented
+**Status:** Approved. Catalog crawl implemented 2026-09-18 on Laravel (see docs/internal_documentation.md,
+"Catalog crawl"), with these changes: tags and review counts come from SteamSpy (Steam fallback),
+embeddings are postponed, `tags` is json rather than `TEXT[]`, and crawls are scheduled every minute.
 
 ## Problem
 
