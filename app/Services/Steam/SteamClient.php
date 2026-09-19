@@ -56,6 +56,22 @@ class SteamClient
         return $player === null ? null : SteamPlayer::fromApi($player);
     }
 
+    /**
+     * Returns one page of Steam's game list after $lastAppId, modified since $modifiedSince, or null if Steam
+     * is unavailable. The page is the raw `response` object: apps, have_more_results, last_appid.
+     */
+    public function getAppList(?int $lastAppId, ?int $modifiedSince, int $maxResults): ?array
+    {
+        $response = $this->get('/IStoreService/GetAppList/v1/', array_filter([
+            'include_games' => 'true',
+            'max_results' => $maxResults,
+            'last_appid' => $lastAppId,
+            'if_modified_since' => $modifiedSince,
+        ]));
+
+        return $response['response'] ?? null;
+    }
+
     /** Performs one Steam API call, turning any transport or upstream failure into an empty array. */
     private function get(string $path, array $query): array
     {
