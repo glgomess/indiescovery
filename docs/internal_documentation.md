@@ -70,3 +70,33 @@ overridable via `STEAM_API_URL`, `STEAM_LOGIN_URL`, `STEAM_MEDIA_URL`. Container
 (`SteamClient`, `SteamOpenId`) receive them via `#[Config]` constructor injection; the static
 `SteamGame::fromApi` factory calls `config()` inline since the container never builds it. Protocol constants (OpenID 2.0
 namespace URIs, the `claimed_id` pattern) stay in code: they are part of the spec, not deployment settings.
+
+## Catalog crawl
+
+Three scheduled artisan commands fill the `games` table (`routes/console.php`). Production needs one
+cron entry, `* * * * * cd /app && php artisan schedule:run`; locally, run `php artisan schedule:work`.
+
+| Command | Schedule | Source | Fills |
+|---|---|---|---|
+| `catalog:discover` | daily | `IStoreService/GetAppList` (needs `STEAM_API_KEY`) | `app_id`, `name` |
+| `catalog:fetch-details` | every minute, 40 apps | Steam store `appdetails` (keyless) | description, release date, developer, publisher, price |
+| `catalog:fetch-stats` | every minute, 50 apps | SteamSpy, or Steam as fallback | `tags`, `review_count`, `positive_ratio` |
+
+Rate limits (observed, not documented): the Steam store allows about 200 requests per 5 minutes per IP;
+SteamSpy about 1 request per second, which `fetch-stats` enforces with a sleep. Batch sizes live in
+`config/catalog.php`. The first full crawl of ~120k games takes about 2-3 days.
+
+**Resumability.** Progress lives in each row (`*_fetched_at`, `*_attempts`), not in the job. Any crash or
+outage just leaves rows in the queue for the next run. Discovery keeps a page cursor in `crawl_state` and
+only advances its `last_modified_since` watermark after a full sweep, so a crash never skips apps.
+
+**Failures.** Attempts are incremented before each HTTP call, so an app that crashes the process is still
+retired after `max_attempts` (3). An upstream outage (transport error, 429, 5xx) is different: it throws
+`UpstreamUnavailable`, refunds the attempt and stops the batch, so rate limiting never retires games.
+Apps a source has no data for (delisted, unknown to SteamSpy) record `*_error` and burn an attempt.
+
+**SteamSpy fallback.** SteamSpy is a third-party service with no uptime guarantee. If it dies, set
+`CATALOG_STATS_SOURCE=steam`: stats then come from Steam genres (coarse) plus `appreviews`. The queue is
+the same rows, so the crawl continues where SteamSpy stopped. The fallback never overwrites
+SteamSpy-filled rows. Switching back to `steamspy` re-queues every row with `stats_source = 'steam'` to
+upgrade its tags. While on the fallback, `fetch-details` halves its batch because both share the store limit.
